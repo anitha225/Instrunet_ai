@@ -1,12 +1,12 @@
 streamlit
 tensorflow==2.16.1
 keras
-numpy
+numpy==1.26.4
+pandas==2.2.2
 librosa
 matplotlib
 soundfile
 numba
 llvmlite
-pandas
 scikit-learn
 fpdf2
