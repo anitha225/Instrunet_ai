@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-import tensorflow as tf
+import keras
 import librosa
 import librosa.display
 import numpy as np
@@ -91,21 +91,16 @@ INSTRUMENT_FULL_NAMES = {
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model(
+        import keras
+        model = keras.saving.load_model(
             "instrunet_model_best.keras",
             compile=False
         )
+        print("Model loaded successfully!")
         return model
-    except Exception:
-        try:
-            model = tf.keras.models.load_model(
-                "instrunet_model_best.h5",
-                compile=False
-            )
-            return model
-        except Exception as e:
-            st.error(f"Cannot load model: {e}")
-            return None
+    except Exception as e:
+        st.error(f"Cannot load model: {e}")
+        return None
 
 
 # ── JSON EXPORT ───────────────────────────────────────────────────
