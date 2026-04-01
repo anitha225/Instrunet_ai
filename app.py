@@ -90,10 +90,10 @@ INSTRUMENT_FULL_NAMES = {
 @st.cache_resource
 def load_model():
     try:
-        from keras.models import load_model
-        model = load_model("instrunet_model_best.keras", compile=False)
-        print("Model loaded successfully!")
-        return model
+        import tflite_runtime.interpreter as tflite
+        interpreter = tflite.Interpreter(model_path="model.tflite")
+        interpreter.allocate_tensors()
+        return interpreter
     except Exception as e:
         st.error(f"Cannot load model: {e}")
         return None
