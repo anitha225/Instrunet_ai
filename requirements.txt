@@ -3,7 +3,7 @@ numpy
 librosa
 matplotlib
 soundfile
-tflite-runtime
 pandas
 scikit-learn
 fpdf2
+tensorflow==2.19.0
