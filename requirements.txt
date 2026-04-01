@@ -1,0 +1,8 @@
+streamlit
+tensorflow-cpu
+librosa
+numpy
+matplotlib
+soundfile
+numba
+llvmlite
