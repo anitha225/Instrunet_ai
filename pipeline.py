@@ -71,12 +71,16 @@ def run_pipeline(audio_path, model, class_names,
     # STEP 3: FEATURE EXTRACTION + CNN PREDICTION
     all_segment_probs = []
     for segment in segments:
-        inp   = preprocess_audio(segment, sr)
+        inp = preprocess_audio(segment, sr)
+        
         input_details = model.get_input_details()
         output_details = model.get_output_details()
+        
         model.set_tensor(input_details[0]['index'], inp.astype(np.float32))
         model.invoke()
+        
         probs = model.get_tensor(output_details[0]['index'])[0]
+        
         all_segment_probs.append(probs.tolist())
 
     # STEP 4: AGGREGATION
