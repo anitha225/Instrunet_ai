@@ -1,6 +1,5 @@
 # app.py
 import streamlit as st
-import keras
 import librosa
 import librosa.display
 import numpy as np
@@ -91,8 +90,8 @@ INSTRUMENT_FULL_NAMES = {
 @st.cache_resource
 def load_model():
     try:
-        import keras
-        model = keras.saving.load_model(
+        import tensorflow as tf
+        model = tf.keras.models.load_model(
             "instrunet_model_best.keras",
             compile=False
         )
