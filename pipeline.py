@@ -3,6 +3,8 @@ import numpy as np
 import os
 from datetime import datetime
 from PIL import Image
+from .pipeline import run_pipeline
+
 
 
 def preprocess_audio(y, sr=22050):
