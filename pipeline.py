@@ -4,6 +4,9 @@ import numpy as np
 import os
 from datetime import datetime
 from PIL import Image
+import numpy as np
+from keras import ops
+import keras
 
 
 def preprocess_audio(y, sr=22050):
@@ -30,16 +33,11 @@ def preprocess_audio(y, sr=22050):
     )
 
     #  Use PIL instead of tensorflow for resize
-    combined_uint8 = (combined * 255).astype(np.uint8)
-    channels = []
-    for i in range(3):
-        ch = Image.fromarray(combined_uint8[:, :, i])
-        ch = ch.resize((128, 128), Image.BILINEAR)
-        channels.append(np.array(ch))
-    combined = np.stack(channels, axis=-1).astype(np.float32) / 255.0
-
+   combined_img = Image.fromarray((combined * 255).astype(np.uint8))
+   combined_img = combined_img.resize((128, 128))
+   combined = np.array(combined_img).astype(np.float32) / 255.0
+   combined = combined.astype(np.float32)
     return np.expand_dims(combined, axis=0)
-
 
 def run_pipeline(audio_path, model, class_names,
                  segment_duration=3.0,
