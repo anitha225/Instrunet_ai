@@ -1,9 +1,9 @@
 # pipeline.py
 import librosa
 import numpy as np
-import tensorflow as tf
 import os
 from datetime import datetime
+from PIL import Image
 
 
 def preprocess_audio(y, sr=22050):
@@ -28,8 +28,16 @@ def preprocess_audio(y, sr=22050):
         [norm(mel_spec_db), norm(delta), norm(delta2)],
         axis=-1
     )
-    combined = tf.image.resize(combined, (128, 128)).numpy()
-    combined = combined.astype(np.float32)
+
+    # ✅ Use PIL instead of tensorflow for resize
+    combined_uint8 = (combined * 255).astype(np.uint8)
+    channels = []
+    for i in range(3):
+        ch = Image.fromarray(combined_uint8[:, :, i])
+        ch = ch.resize((128, 128), Image.BILINEAR)
+        channels.append(np.array(ch))
+    combined = np.stack(channels, axis=-1).astype(np.float32) / 255.0
+
     return np.expand_dims(combined, axis=0)
 
 
@@ -79,19 +87,12 @@ def run_pipeline(audio_path, model, class_names,
     detected = [class_names[i] for i in detected_idx]
 
     # STEP 5: BUILD RESULT OBJECT
-    # mentor requirement:
-    # metadata, model_config, predictions, confidence, timelines
     report = {
-
-        # METADATA
         "metadata": {
             "audio_name"        : os.path.basename(audio_path),
             "audio_duration_sec": round(duration, 2),
-            "report_generated"  : datetime.now().strftime(
-                                   "%Y-%m-%d %H:%M:%S")
+            "report_generated"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         },
-
-        # MODEL CONFIGURATION
         "model_config": {
             "threshold"           : threshold,
             "segment_duration_sec": segment_duration,
@@ -99,8 +100,6 @@ def run_pipeline(audio_path, model, class_names,
             "total_segments"      : len(segments),
             "aggregation_method"  : "mean"
         },
-
-        # PREDICTIONS
         "predictions": {
             "detected_instruments": detected,
             "instrument_wise": {
@@ -113,14 +112,10 @@ def run_pipeline(audio_path, model, class_names,
                 for i, name in enumerate(class_names)
             }
         },
-
-        # CONFIDENCE SCORES
         "confidence": {
             name: round(float(mean_probs[i]), 4)
             for i, name in enumerate(class_names)
         },
-
-        # TIMELINES
         "timelines": [
             {
                 "segment"       : idx,
