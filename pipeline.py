@@ -1,12 +1,8 @@
-# pipeline.py
 import librosa
 import numpy as np
 import os
 from datetime import datetime
 from PIL import Image
-import numpy as np
-from keras import ops
-import keras
 
 
 def preprocess_audio(y, sr=22050):
@@ -14,30 +10,31 @@ def preprocess_audio(y, sr=22050):
         y=y, sr=sr, n_fft=2048, hop_length=512, n_mels=128
     )
     mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
     mel_min, mel_max = mel_spec_db.min(), mel_spec_db.max()
     if mel_max - mel_min > 1e-6:
         mel_spec_db = (mel_spec_db - mel_min) / (mel_max - mel_min)
     else:
         mel_spec_db = np.zeros_like(mel_spec_db)
-        
-def norm(x):
+
+    def norm(x):
         xmin, xmax = x.min(), x.max()
         return (x - xmin) / (xmax - xmin + 1e-6)
-    
-delta  = librosa.feature.delta(mel_spec_db)
-delta2 = librosa.feature.delta(mel_spec_db, order=2)
 
-combined = np.stack(
-    [norm(mel_spec_db), norm(delta), norm(delta2)],
-    axis=-1
-)
+    delta = librosa.feature.delta(mel_spec_db)
+    delta2 = librosa.feature.delta(mel_spec_db, order=2)
 
-    #  Use PIL instead of tensorflow for resize
-combined_img = Image.fromarray((combined * 255).astype(np.uint8))
-combined_img = combined_img.resize((128, 128))
-combined = np.array(combined_img).astype(np.float32) / 255.0
+    combined = np.stack(
+        [norm(mel_spec_db), norm(delta), norm(delta2)],
+        axis=-1
+    )
 
-return np.expand_dims(combined, axis=0)
+    combined_img = Image.fromarray((combined * 255).astype(np.uint8))
+    combined_img = combined_img.resize((128, 128))
+    combined = np.array(combined_img).astype(np.float32) / 255.0
+
+    return np.expand_dims(combined, axis=0)
+
 
 def run_pipeline(audio_path, model, class_names,
                  segment_duration=3.0,
@@ -45,46 +42,47 @@ def run_pipeline(audio_path, model, class_names,
                  threshold=0.15):
 
     # STEP 1: LOAD AUDIO
-    y, sr    = librosa.load(audio_path, sr=22050)
+    y, sr = librosa.load(audio_path, sr=22050)
     duration = librosa.get_duration(y=y, sr=sr)
 
     # STEP 2: SEGMENTATION
     segment_len = int(segment_duration * sr)
-    hop_len     = int(hop_duration * sr)
-    segments    = []
-    timestamps  = []
+    hop_len = int(hop_duration * sr)
+    segments = []
+    timestamps = []
 
     for start in range(0, len(y) - segment_len + 1, hop_len):
         segments.append(y[start: start + segment_len])
         timestamps.append({
             "start": round(start / sr, 2),
-            "end"  : round((start + segment_len) / sr, 2)
+            "end": round((start + segment_len) / sr, 2)
         })
 
     if not segments:
         segments.append(y)
         timestamps.append({
             "start": 0.0,
-            "end"  : round(duration, 2)
+            "end": round(duration, 2)
         })
 
-    # STEP 3: FEATURE EXTRACTION + CNN PREDICTION
+    # STEP 3: FEATURE EXTRACTION + TFLITE PREDICTION
     all_segment_probs = []
+
     for segment in segments:
         inp = preprocess_audio(segment, sr)
-        
+
         input_details = model.get_input_details()
         output_details = model.get_output_details()
-        
+
         model.set_tensor(input_details[0]['index'], inp.astype(np.float32))
         model.invoke()
-        
+
         probs = model.get_tensor(output_details[0]['index'])[0]
-        
+
         all_segment_probs.append(probs.tolist())
 
     # STEP 4: AGGREGATION
-    mean_probs   = np.mean(all_segment_probs, axis=0)
+    mean_probs = np.mean(all_segment_probs, axis=0)
     detected_idx = np.where(mean_probs > threshold)[0]
 
     if len(detected_idx) == 0:
@@ -95,25 +93,24 @@ def run_pipeline(audio_path, model, class_names,
     # STEP 5: BUILD RESULT OBJECT
     report = {
         "metadata": {
-            "audio_name"        : os.path.basename(audio_path),
+            "audio_name": os.path.basename(audio_path),
             "audio_duration_sec": round(duration, 2),
-            "report_generated"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "report_generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         },
         "model_config": {
-            "threshold"           : threshold,
+            "threshold": threshold,
             "segment_duration_sec": segment_duration,
-            "hop_duration_sec"    : hop_duration,
-            "total_segments"      : len(segments),
-            "aggregation_method"  : "mean"
+            "hop_duration_sec": hop_duration,
+            "total_segments": len(segments),
+            "aggregation_method": "mean"
         },
         "predictions": {
             "detected_instruments": detected,
             "instrument_wise": {
                 name: {
-                    "status"          : "Present" if name in detected
-                                        else "Not Present",
+                    "status": "Present" if name in detected else "Not Present",
                     "confidence_score": round(float(mean_probs[i]), 4),
-                    "confidence_pct"  : f"{mean_probs[i]*100:.1f}%"
+                    "confidence_pct": f"{mean_probs[i]*100:.1f}%"
                 }
                 for i, name in enumerate(class_names)
             }
@@ -124,11 +121,11 @@ def run_pipeline(audio_path, model, class_names,
         },
         "timelines": [
             {
-                "segment"       : idx,
-                "time_start"    : timestamps[idx]["start"],
-                "time_end"      : timestamps[idx]["end"],
+                "segment": idx,
+                "time_start": timestamps[idx]["start"],
+                "time_end": timestamps[idx]["end"],
                 "top_instrument": class_names[np.argmax(seg_probs)],
-                "probabilities" : {
+                "probabilities": {
                     name: round(float(prob), 4)
                     for name, prob in zip(class_names, seg_probs)
                 }
@@ -136,10 +133,5 @@ def run_pipeline(audio_path, model, class_names,
             for idx, seg_probs in enumerate(all_segment_probs)
         ]
     }
-
-    print(f"File     : {os.path.basename(audio_path)}")
-    print(f"Duration : {round(duration, 2)}s")
-    print(f"Segments : {len(segments)}")
-    print(f"Detected : {detected}")
 
     return report, mean_probs, all_segment_probs
