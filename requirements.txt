@@ -1,13 +1,9 @@
 streamlit
-tensorflow==2.16.1
-keras
-numpy==1.26.4
-pandas==2.2.2
-librosa==0.10.1
-ml-dtypes==0.4.1
+numpy
+librosa
 matplotlib
 soundfile
-numba
-llvmlite
+tflite-runtime
+pandas
 scikit-learn
 fpdf2
