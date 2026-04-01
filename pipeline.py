@@ -29,7 +29,7 @@ def preprocess_audio(y, sr=22050):
         axis=-1
     )
 
-    # ✅ Use PIL instead of tensorflow for resize
+    #  Use PIL instead of tensorflow for resize
     combined_uint8 = (combined * 255).astype(np.uint8)
     channels = []
     for i in range(3):
@@ -74,7 +74,11 @@ def run_pipeline(audio_path, model, class_names,
     all_segment_probs = []
     for segment in segments:
         inp   = preprocess_audio(segment, sr)
-        probs = model.predict(inp, verbose=0)[0]
+        input_details = model.get_input_details()
+        output_details = model.get_output_details()
+        model.set_tensor(input_details[0]['index'], inp.astype(np.float32))
+        model.invoke()
+        probs = model.get_tensor(output_details[0]['index'])[0]
         all_segment_probs.append(probs.tolist())
 
     # STEP 4: AGGREGATION
