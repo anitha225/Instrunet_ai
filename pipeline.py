@@ -19,25 +19,25 @@ def preprocess_audio(y, sr=22050):
         mel_spec_db = (mel_spec_db - mel_min) / (mel_max - mel_min)
     else:
         mel_spec_db = np.zeros_like(mel_spec_db)
-
-    def norm(x):
+        
+def norm(x):
         xmin, xmax = x.min(), x.max()
         return (x - xmin) / (xmax - xmin + 1e-6)
+    
+delta  = librosa.feature.delta(mel_spec_db)
+delta2 = librosa.feature.delta(mel_spec_db, order=2)
 
-    delta  = librosa.feature.delta(mel_spec_db)
-    delta2 = librosa.feature.delta(mel_spec_db, order=2)
-
-    combined = np.stack(
-        [norm(mel_spec_db), norm(delta), norm(delta2)],
-        axis=-1
-    )
+combined = np.stack(
+    [norm(mel_spec_db), norm(delta), norm(delta2)],
+    axis=-1
+)
 
     #  Use PIL instead of tensorflow for resize
-   combined_img = Image.fromarray((combined * 255).astype(np.uint8))
-   combined_img = combined_img.resize((128, 128))
-   combined = np.array(combined_img).astype(np.float32) / 255.0
-   combined = combined.astype(np.float32)
-    return np.expand_dims(combined, axis=0)
+combined_img = Image.fromarray((combined * 255).astype(np.uint8))
+combined_img = combined_img.resize((128, 128))
+combined = np.array(combined_img).astype(np.float32) / 255.0
+
+return np.expand_dims(combined, axis=0)
 
 def run_pipeline(audio_path, model, class_names,
                  segment_duration=3.0,
