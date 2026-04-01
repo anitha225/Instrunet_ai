@@ -90,18 +90,13 @@ INSTRUMENT_FULL_NAMES = {
 @st.cache_resource
 def load_model():
     try:
-        import tensorflow as tf
-        model = tf.keras.models.load_model(
-            "instrunet_model_best.keras",
-            compile=False
-        )
+        from keras.models import load_model
+        model = load_model("instrunet_model_best.keras", compile=False)
         print("Model loaded successfully!")
         return model
     except Exception as e:
         st.error(f"Cannot load model: {e}")
         return None
-
-
 # ── JSON EXPORT ───────────────────────────────────────────────────
 def get_json_export(report):
     export = {
