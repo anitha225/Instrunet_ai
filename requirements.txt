@@ -1,8 +1,9 @@
 streamlit
-tensorflow==2.15.0
+tensorflow-cpu
 librosa
 numpy
 matplotlib
+fpdf2
+pandas
+scikit-learn
 soundfile
-numba
-llvmlite
