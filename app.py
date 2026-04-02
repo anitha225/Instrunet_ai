@@ -20,8 +20,6 @@ st.set_page_config(
     page_icon="🎵",
     layout="wide"
 )
-st.write("Working directory:", os.getcwd())
-st.write("Files visible:", os.listdir("."))
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────
 st.markdown("""
