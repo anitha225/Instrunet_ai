@@ -3,4 +3,5 @@ librosa>=0.10
 matplotlib>=3.8
 pandas>=2.2
 fpdf2>=2.7.9
-tensorflow-cpu>=2.13.0,<2.16.0
+tensorflow-cpu==2.21.0
+keras==3.13.2
