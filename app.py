@@ -12,6 +12,8 @@ import os
 import io
 import tempfile
 from pipeline import run_pipeline
+st.write("Working directory:", os.getcwd())
+st.write("Files visible:", os.listdir("."))
 
 # ── PAGE CONFIG ───────────────────────────────────────────────────
 st.set_page_config(
