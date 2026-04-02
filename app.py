@@ -12,8 +12,7 @@ import os
 import io
 import tempfile
 from pipeline import run_pipeline
-st.write("Working directory:", os.getcwd())
-st.write("Files visible:", os.listdir("."))
+
 
 # ── PAGE CONFIG ───────────────────────────────────────────────────
 st.set_page_config(
@@ -21,6 +20,8 @@ st.set_page_config(
     page_icon="🎵",
     layout="wide"
 )
+st.write("Working directory:", os.getcwd())
+st.write("Files visible:", os.listdir("."))
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────
 st.markdown("""
@@ -92,23 +93,23 @@ INSTRUMENT_FULL_NAMES = {
 # ── LOAD MODEL ────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     try:
         model = tf.keras.models.load_model(
-            "instrunet_model_best.keras",
+            os.path.join(base_dir, "instrunet_model_best.keras"),
             compile=False
         )
         return model
     except Exception:
         try:
             model = tf.keras.models.load_model(
-                "instrunet_model_best.h5",
+                os.path.join(base_dir, "instrunet_model_best.h5"),
                 compile=False
             )
             return model
         except Exception as e:
             st.error(f"Cannot load model: {e}")
             return None
-
 
 # ── JSON EXPORT ───────────────────────────────────────────────────
 def get_json_export(report):
